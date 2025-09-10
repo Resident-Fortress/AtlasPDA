@@ -7,14 +7,36 @@
 
 import SwiftUI
 import FoundationModels
+internal import Combine
 
+// MARK: - Chat ViewModel
 @MainActor
 class ChatViewModel: ObservableObject {
     @Published var inputText: String = ""
-    @Published var session = LanguageModelSession() {
-        """
-        You're a Personal Assistant, you help users manage dates in a calendar, give suggestions when asked, and give recommendations based on user interests. You will ask questions that help you learn more about the user and are not allowed to give any harmful information or suggestions to the user
-        """
+
+    @Published var session: LanguageModelSession
+
+    init() {
+        session = LanguageModelSession(
+            tools: [CalendarTool(), CalendarReadTool()] // Inject Calendar tools
+        ) {
+            """
+            You are Atlas (Assistant for Tasks, Learning, and Scheduling), a Personal Assistant.
+            - Help the user manage dates and schedule events using the Calendar tool.
+            - Provide suggestions and recommendations when asked.
+            - Ask questions to learn more about the user.
+            - Do not provide harmful content.
+            
+            When creating a calendar event, you **must only return JSON** in this format:
+
+            {
+              "title": "Event Title",
+              "date": "2025-09-10T15:00:00Z"
+            }
+
+            Do not include any extra text or explanation. Use **UTC ISO8601 format** for the date.
+            """
+        }
     }
     
     var isSystemAvailable: Bool {
@@ -50,15 +72,16 @@ class ChatViewModel: ObservableObject {
                 let prompt = inputText
                 inputText = ""
                 let stream = session.streamResponse(to: prompt)
+
                 for try await response in stream {
-                    print(response)
+                    print("Assistant: \(response.content)") // The model’s reply
                 }
             }
             catch let error as LanguageModelSession.GenerationError {
-                print(error.localizedDescription)
+                print("⚠️ Generation error: \(error.localizedDescription)")
             }
             catch {
-                print(error.localizedDescription)
+                print("⚠️ Error: \(error.localizedDescription)")
             }
         }
     }

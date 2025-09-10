@@ -12,13 +12,24 @@ struct ContentView: View {
     @StateObject private var viewModel = ChatViewModel()
     
     var body: some View {
-        if viewModel.isSystemAvailable {
-            ChatView(viewModel: viewModel)
-        } else {
-            ContentUnavailableView(
-                viewModel.unavailabilityReason,
-                systemImage: "apple.intelligence.badge.xmark"
-            )
+        VStack{
+            if viewModel.isSystemAvailable {
+                ChatView(viewModel: viewModel)
+            } else {
+                ContentUnavailableView(
+                    viewModel.unavailabilityReason,
+                    systemImage: "apple.intelligence.badge.xmark"
+                )
+            }
+            
+        }
+        .toolbar {
+            NavigationLink {
+                SettingsView()
+            } label: {
+                Image(systemName: "gear")
+            }
+            
         }
     }
 }
@@ -53,4 +64,8 @@ struct ChatView: View {
             viewModel.prewarmSession()
         }
     }
+}
+
+#Preview {
+    ContentView()
 }
